@@ -5,7 +5,7 @@ const Format = {
     data: data || null,
   }),
 
-  success: (data, message) => ({
+  success: (message, data) => ({
     code: 200,
     message: message || "OK",
     data: data || null,
@@ -17,7 +17,7 @@ const Format = {
     data: null,
   }),
 
-  badRequest: (data, message) => ({
+  badRequest: (message, data) => ({
     code: 400,
     message: message || "Bad Request",
     data: data || null,
@@ -35,7 +35,7 @@ const Format = {
     data: null,
   }),
 
-  conflict: (data, message) => ({
+  conflict: (message, data) => ({
     code: 409,
     message: message || "Conflict",
     data: data || null,

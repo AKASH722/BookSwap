@@ -1,5 +1,14 @@
 import mongoose from "mongoose";
 
+/**
+ * Establishes a connection to the MongoDB database using the connection URI
+ * specified in the environment variable `MONGODB_URI`.
+ *
+ * @async
+ * @function connectDB
+ * @returns - A promise that resolves when the connection is successfully established.
+ * @throws Will log an error message and exit the process if the connection fails.
+ */
 const connectDB = async () => {
   try {
     const connectionInstance = await mongoose.connect(
