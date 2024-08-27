@@ -1,5 +1,5 @@
-import { MongoError } from "mongodb";
 import Format from "../utils/Format.js";
+import { MongoError } from "mongodb";
 
 /**
  * Handles MongoDB-specific errors and returns a formatted response.
@@ -72,10 +72,10 @@ const errorMiddleware = (err, req, res, _) => {
     stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
   };
 
-  if (err instanceof MongoError) {
+  if (err.name === "MongoServerError" || err.name === "MongoError") {
     const mongoErrorResponse = handleMongoError(err);
     res
-      .status(mongoErrorResponse.code || 500)
+      .status(400)
       .json(
         Format.error(mongoErrorResponse.code || 500, mongoErrorResponse.message)
       );

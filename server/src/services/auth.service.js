@@ -12,13 +12,7 @@ export const registerUser = async (username, email, password) => {
   user = new User({ username, email, password });
   await user.save();
 
-  const accessToken = user.generateAccessToken();
-
-  if (!accessToken) return Format.internalError("Error generating token");
-
-  return Format.success("User Signup Successfully", {
-    accessToken: accessToken,
-  });
+  return Format.success("User Signup Successfully");
 };
 
 export const loginUser = async (email, password) => {
@@ -35,7 +29,10 @@ export const loginUser = async (email, password) => {
 
   if (!accessToken) return Format.internalError("Error generating token");
 
+  delete user["password"];
+
   return Format.success("User Login Successfully", {
     accessToken: accessToken,
+    user: user,
   });
 };

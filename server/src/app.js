@@ -6,12 +6,18 @@ import authRouter from "./routers/auth.router.js";
 import userRouter from "./routers/user.router.js";
 import bookRouter from "./routers/book.router.js";
 import exchangeRequestRouter from "./routers/exchangeRequest.router.js";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const app = express();
+
+app.options("*", cors());
 
 app.use(
   cors({
     origin: process.env.FRONTEND_URL,
+    methods: "*",
     credentials: true,
   })
 );
