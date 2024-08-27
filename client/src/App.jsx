@@ -5,6 +5,8 @@ import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "@/contexts/AuthContext.jsx";
 import PrivateRoute from "@/components/PrivateRoute.jsx";
 import Home from "@/components/Home.jsx";
+import BookListing from "@/components/BookListing.jsx";
+import BookExchange from "@/components/BookExchange.jsx";
 
 export default function App() {
   return (
@@ -19,6 +21,14 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/" element={<PrivateRoute element={<Home />} />} />
+          <Route
+            path="/my-books"
+            element={<PrivateRoute element={<BookListing />} />}
+          />
+          <Route
+            path="/exchange"
+            element={<PrivateRoute element={<BookExchange />} />}
+          />
         </Routes>
       </Router>
     </AuthProvider>
