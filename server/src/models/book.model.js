@@ -1,5 +1,20 @@
 import mongoose, { Schema } from "mongoose";
 
+const ownerSchema = new Schema(
+  {
+    user: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    isOffered: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  { _id: false }
+);
+
 const bookSchema = new Schema(
   {
     title: {
@@ -28,12 +43,7 @@ const bookSchema = new Schema(
     imageUrl: {
       type: String,
     },
-    owners: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "User",
-      },
-    ],
+    owners: [ownerSchema],
   },
   {
     timestamps: true,
