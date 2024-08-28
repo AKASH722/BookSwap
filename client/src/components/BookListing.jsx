@@ -20,6 +20,18 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "react-hot-toast";
 import { debounce } from "lodash";
+import { z } from "zod";
+import axios from "axios";
+import { useAuth } from "@/contexts/AuthContext.jsx";
+
+const bookSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  author: z.string().min(1, "Author is required"),
+  genre: z.string().optional(),
+  isbn: z.string().min(10, "ISBN must be at least 10 characters").optional(),
+  description: z.string().optional(),
+  imageUrl: z.string().url("Must be a valid URL").optional(),
+});
 
 export default function BookListing() {
   const [books, setBooks] = useState([]);
@@ -30,18 +42,41 @@ export default function BookListing() {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState([]);
 
+  const { fetchUserData } = useAuth();
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewBook((prev) => ({ ...prev, [name]: value }));
   };
 
+  const fetchBooksFromBackend = async () => {
+    try {
+      const response = await axios.get(
+        `${import.meta.env.VITE_BACKEND_URL}/api/book`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          },
+        },
+      );
+
+      setBooks(response.data.data);
+    } catch (error) {
+      console.error("Error fetching books:", error);
+      toast.error(
+        error.response.data.message || "Failed to fetch books from the server.",
+      );
+    }
+  };
+
   const fetchBookDetails = useCallback(async (query) => {
     try {
-      const response = await fetch(
-        `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}`,
+      const response = await axios.get(
+        `https://www.googleapis.com/books/v1/volumes`,
+        {
+          params: { q: query },
+        },
       );
-      const data = await response.json();
-      return data.items || [];
+      return response.data.items || [];
     } catch (error) {
       console.error("Error fetching book details:", error);
       return [];
@@ -50,12 +85,16 @@ export default function BookListing() {
 
   const searchBooks = useCallback(
     debounce(async (query) => {
+      if (query === "") setSearchResults([]);
       if (query.length < 3) return;
       const results = await fetchBookDetails(query);
       setSearchResults(results);
     }, 300),
-    [],
+    [fetchBookDetails],
   );
+  useEffect(() => {
+    fetchBooksFromBackend();
+  }, []);
 
   useEffect(() => {
     if (searchTerm) {
@@ -73,51 +112,96 @@ export default function BookListing() {
     }
   }, [newBook.title, newBook.isbn, fetchBookDetails]);
 
-  const addBook = () => {
-    if (newBook.title && newBook.author) {
-      const matchedBook = suggestions[0]?.volumeInfo;
-      if (
-        matchedBook &&
-        (matchedBook.title !== newBook.title ||
-          matchedBook.authors?.[0] !== newBook.author ||
-          matchedBook.categories?.[0] !== newBook.genre ||
-          matchedBook.industryIdentifiers?.[0]?.identifier !== newBook.isbn)
-      ) {
-        toast.warn(
-          "Book details don't match Google Books API. Please check and confirm.",
-        );
+  const validateBook = (book) => {
+    try {
+      bookSchema.parse(book);
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast.error(error.errors[0].message);
       }
-      setBooks((prev) => [
-        ...prev,
-        { ...newBook, id: Date.now().toString(), offeredForExchange: false },
-      ]);
+      return false;
+    }
+  };
+
+  const addBook = async () => {
+    if (!validateBook(newBook)) return;
+
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/book`,
+        newBook,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("accessToken")}`, // Include token in header
+          },
+        },
+      );
+
+      setBooks((prev) => [...prev, response.data.data]); // Adjust according to the response structure
       setNewBook({});
       setIsDialogOpen(false);
+      toast.success("Book added successfully!");
+    } catch (error) {
+      console.error("Error adding book:", error);
+      toast.error("Failed to add the book.");
     }
   };
 
   const editBook = (id) => {
     setEditingId(id);
-    const bookToEdit = books.find((book) => book.id === id);
+    const bookToEdit = books.find((book) => book._id === id);
     if (bookToEdit) {
       setNewBook(bookToEdit);
       setIsDialogOpen(true);
     }
   };
 
-  const updateBook = () => {
-    setBooks((prev) =>
-      prev.map((book) =>
-        book.id === editingId ? { ...newBook, id: editingId } : book,
-      ),
-    );
-    setNewBook({});
-    setEditingId(null);
-    setIsDialogOpen(false);
+  const updateBook = async () => {
+    if (!validateBook(newBook)) return;
+
+    try {
+      await axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/api/book/${editingId}`,
+        newBook,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("accessToken")}`, // Include token in header
+          },
+        },
+      );
+
+      setBooks((prev) =>
+        prev.map((book) =>
+          book._id === editingId ? { ...newBook, id: editingId } : book,
+        ),
+      );
+      setNewBook({});
+      setEditingId(null);
+      setIsDialogOpen(false);
+      toast.success("Book updated successfully!");
+    } catch (error) {
+      console.error("Error updating book:", error);
+      toast.error("Failed to update the book.");
+    }
   };
 
-  const removeBook = (id) => {
-    setBooks((prev) => prev.filter((book) => book.id !== id));
+  const removeBook = async (id) => {
+    try {
+      await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/api/book/${id}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`, // Include token in header
+        },
+      });
+
+      setBooks((prev) => prev.filter((book) => book._id !== id));
+      toast.success("Book removed successfully!");
+    } catch (error) {
+      console.error("Error removing book:", error);
+      toast.error("Failed to remove the book.");
+    }
   };
 
   const selectSuggestion = (book) => {
@@ -132,29 +216,64 @@ export default function BookListing() {
     setSuggestions([]);
   };
 
-  const addBookFromSearch = (book) => {
+  const addBookFromSearch = async (book) => {
     const newBook = {
-      id: Date.now().toString(),
       title: book.volumeInfo.title || "",
       author: book.volumeInfo.authors?.[0] || "",
       genre: book.volumeInfo.categories?.[0] || "",
       isbn: book.volumeInfo.industryIdentifiers?.[0]?.identifier || "",
       description: book.volumeInfo.description || "",
       imageUrl: book.volumeInfo.imageLinks?.thumbnail || "",
-      offeredForExchange: false,
+      isOffered: false,
     };
-    setBooks((prev) => [...prev, newBook]);
-    toast.success("Book added successfully!");
+
+    if (!validateBook(newBook)) return;
+
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/book`,
+        newBook,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("accessToken")}`, // Include token in header
+          },
+        },
+      );
+
+      setBooks((prev) => [...prev, response.data.data]); // Adjust according to the response structure
+      toast.success("Book added successfully!");
+    } catch (error) {
+      console.error("Error adding book:", error);
+      toast.error("Failed to add the book.");
+    }
   };
 
-  const toggleExchangeOffer = (id) => {
-    setBooks((prev) =>
-      prev.map((book) =>
-        book.id === id
-          ? { ...book, offeredForExchange: !book.offeredForExchange }
-          : book,
-      ),
+  const toggleExchangeOffer = async (id) => {
+    const updatedBooks = books.map((book) =>
+      book._id === id ? { ...book, isOffered: !book.isOffered } : book,
     );
+
+    try {
+      const book = updatedBooks.find((b) => b._id === id);
+      await axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/api/book/${id}`,
+        book,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("accessToken")}`, // Include token in header
+          },
+        },
+      );
+
+      fetchUserData();
+      setBooks(updatedBooks);
+      toast.success("Exchange offer status updated successfully!");
+    } catch (error) {
+      console.error("Error updating book:", error);
+      toast.error("Failed to update the exchange offer status.");
+    }
   };
 
   const filteredBooks = books.filter(
@@ -241,7 +360,7 @@ export default function BookListing() {
                   <ul className="border rounded-md divide-y max-h-40 overflow-auto">
                     {suggestions.slice(0, 5).map((book) => (
                       <li
-                        key={book.id}
+                        key={book._id}
                         className="p-2 hover:bg-gray-100 cursor-pointer"
                         onClick={() => selectSuggestion(book)}
                       >
@@ -265,7 +384,7 @@ export default function BookListing() {
           <h2 className="text-lg font-semibold mb-2">Search Results:</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {searchResults.map((book) => (
-              <Card key={book.id} className="flex flex-col justify-between">
+              <Card key={book._id} className="flex flex-col justify-between">
                 <CardHeader className="p-4">
                   <CardTitle className="text-sm">
                     {book.volumeInfo.title}
@@ -294,7 +413,7 @@ export default function BookListing() {
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {filteredBooks.map((book) => (
-          <Card key={book.id} className="flex flex-col justify-between">
+          <Card key={book._id} className="flex flex-col justify-between">
             <CardHeader className="p-4">
               <CardTitle className="text-lg">{book.title}</CardTitle>
             </CardHeader>
@@ -308,32 +427,37 @@ export default function BookListing() {
               <p className="text-sm">
                 <strong>ISBN:</strong> {book.isbn}
               </p>
+              <p className="text-sm">
+                {book.description && book.description.length > 100
+                  ? `${book.description.substring(0, 100)}...`
+                  : book.description}
+              </p>
               {book.imageUrl && (
                 <img
                   src={book.imageUrl}
                   alt={book.title}
-                  className="mt-2 w-full h-32 object-cover"
+                  className="mt-2 w-full h-32 object-scale-down"
                 />
               )}
               <div className="flex items-center space-x-2 mt-2">
                 <Checkbox
-                  id={`exchange-${book.id}`}
-                  checked={book.offeredForExchange}
-                  onCheckedChange={() => toggleExchangeOffer(book.id)}
+                  id={`exchange-${book._id}`}
+                  checked={book.isOffered}
+                  onCheckedChange={() => toggleExchangeOffer(book._id)}
                 />
-                <Label htmlFor={`exchange-${book.id}`}>
+                <Label htmlFor={`exchange-${book._id}`}>
                   Offer for exchange
                 </Label>
               </div>
             </CardContent>
             <CardFooter className="p-4 pt-0 flex justify-between">
-              <Button size="sm" onClick={() => editBook(book.id)}>
+              <Button size="sm" onClick={() => editBook(book._id)}>
                 Edit
               </Button>
               <Button
                 size="sm"
                 variant="destructive"
-                onClick={() => removeBook(book.id)}
+                onClick={() => removeBook(book._id)}
               >
                 Remove
               </Button>

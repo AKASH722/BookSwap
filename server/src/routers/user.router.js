@@ -8,4 +8,5 @@ router.use(verifyJWT);
 
 router.get("", userController.getUser);
 
+router.put("/book/:id", userController.toggleDesiredBook);
 export default router;

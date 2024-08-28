@@ -12,11 +12,9 @@ dotenv.config();
 
 const app = express();
 
-app.options("*", cors());
-
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL,
+    origin: process.env.FRONTEND_URL.split(","),
     methods: "*",
     credentials: true,
   })

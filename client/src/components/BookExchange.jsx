@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,102 +26,10 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "react-hot-toast";
 import { Heart } from "lucide-react";
-
-const mockUsers = [
-  {
-    id: "1",
-    name: "Alice",
-    books: [
-      {
-        id: "1",
-        title: "To Kill a Mockingbird",
-        author: "Harper Lee",
-        genre: "Fiction",
-        isbn: "9780446310789",
-        description: "A classic of modern American literature",
-        imageUrl: "https://example.com/mockingbird.jpg",
-        offeredForExchange: true,
-        ownerId: "1",
-      },
-      {
-        id: "2",
-        title: "1984",
-        author: "George Orwell",
-        genre: "Science Fiction",
-        isbn: "9780451524935",
-        description: "A dystopian social science fiction novel",
-        imageUrl: "https://example.com/1984.jpg",
-        offeredForExchange: false,
-        ownerId: "1",
-      },
-    ],
-    desiredBooks: ["5", "6"],
-    likedBooks: [],
-  },
-  {
-    id: "2",
-    name: "Bob",
-    books: [
-      {
-        id: "3",
-        title: "The Great Gatsby",
-        author: "F. Scott Fitzgerald",
-        genre: "Fiction",
-        isbn: "9780743273565",
-        description: "A novel of the Jazz Age",
-        imageUrl: "https://example.com/gatsby.jpg",
-        offeredForExchange: true,
-        ownerId: "2",
-      },
-      {
-        id: "4",
-        title: "Pride and Prejudice",
-        author: "Jane Austen",
-        genre: "Romance",
-        isbn: "9780141439518",
-        description: "A romantic novel of manners",
-        imageUrl: "https://example.com/pride.jpg",
-        offeredForExchange: true,
-        ownerId: "2",
-      },
-    ],
-    desiredBooks: ["1", "2"],
-    likedBooks: [],
-  },
-  {
-    id: "3",
-    name: "Charlie",
-    books: [
-      {
-        id: "5",
-        title: "The Catcher in the Rye",
-        author: "J.D. Salinger",
-        genre: "Fiction",
-        isbn: "9780316769174",
-        description: "A controversial novel originally published for adults",
-        imageUrl: "https://example.com/catcher.jpg",
-        offeredForExchange: true,
-        ownerId: "3",
-      },
-      {
-        id: "6",
-        title: "The Hobbit",
-        author: "J.R.R. Tolkien",
-        genre: "Fantasy",
-        isbn: "9780547928227",
-        description: "A fantasy novel and children's book",
-        imageUrl: "https://example.com/hobbit.jpg",
-        offeredForExchange: true,
-        ownerId: "3",
-      },
-    ],
-    desiredBooks: ["3", "4"],
-    likedBooks: [],
-  },
-];
+import { useAuth } from "@/contexts/AuthContext.jsx";
+import axios from "axios";
 
 export default function BookExchange() {
-  const [currentUser, setCurrentUser] = useState(mockUsers[0]);
   const [exchangeBooks, setExchangeBooks] = useState([]);
   const [filteredBooks, setFilteredBooks] = useState([]);
   const [selectedBook, setSelectedBook] = useState(null);
@@ -133,16 +39,37 @@ export default function BookExchange() {
   const [genreFilter, setGenreFilter] = useState("");
   const [authorFilter, setAuthorFilter] = useState("");
   const [showOnlyMatches, setShowOnlyMatches] = useState(false);
+  const [books, setBooks] = useState([]);
+  const { user } = useAuth();
 
   useEffect(() => {
-    const offeredBooks = mockUsers.flatMap((user) =>
-      user.books.filter(
-        (book) => book.offeredForExchange && book.ownerId !== currentUser.id,
-      ),
-    );
-    setExchangeBooks(offeredBooks);
-    setFilteredBooks(offeredBooks);
-  }, [currentUser.id]);
+    const fetchBooks = async () => {
+      try {
+        const response = await axios.get(
+          `${import.meta.env.VITE_BACKEND_URL}/api/book/all-offered`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+            },
+          },
+        );
+
+        setBooks(response.data.data);
+      } catch (error) {
+        console.error("Error fetching books:", error);
+        toast.error(
+          error.response.data.message ||
+            "Failed to fetch books from the server.",
+        );
+      }
+    };
+    fetchBooks();
+  }, []);
+
+  useEffect(() => {
+    setExchangeBooks(books);
+    setFilteredBooks(books);
+  }, [user, books]);
 
   useEffect(() => {
     let filtered = exchangeBooks.filter(
@@ -162,7 +89,7 @@ export default function BookExchange() {
 
     if (showOnlyMatches) {
       filtered = filtered.filter((book) =>
-        currentUser.desiredBooks.includes(book.id),
+        user.desiredBooks.includes(book._id),
       );
     }
 
@@ -173,38 +100,56 @@ export default function BookExchange() {
     authorFilter,
     showOnlyMatches,
     exchangeBooks,
-    currentUser.desiredBooks,
+    user?.desiredBooks,
   ]);
 
   const handleBookSelect = (book) => {
     setSelectedBook(book);
-    const owner = mockUsers.find((user) => user.id === book.ownerId);
+    const owner = book.ownedBy;
     setSelectedOwner(owner || null);
   };
 
-  const handleExchangeRequest = () => {
+  const handleExchangeRequest = async () => {
     if (selectedBook && offerBook) {
-      toast.success(
-        `Exchange request sent for "${selectedBook.title}" offering "${currentUser.books.find((b) => b.id === offerBook)?.title}"`,
-      );
-      setSelectedBook(null);
-      setSelectedOwner(null);
-      setOfferBook("");
+      try {
+        // Replace with actual API request if needed
+        toast.success(
+          `Exchange request sent for "${selectedBook.title}" offering "${user.books.find((b) => b._id === offerBook)?.title}"`,
+        );
+      } catch (error) {
+        toast.error("Failed to send exchange request");
+      } finally {
+        setSelectedBook(null);
+        setSelectedOwner(null);
+        setOfferBook("");
+      }
     } else {
       toast.error("Please select a book to offer for exchange");
     }
   };
 
-  const handleLikeBook = (bookId) => {
-    setCurrentUser((prevUser) => {
-      const updatedLikedBooks = prevUser.likedBooks.includes(bookId)
-        ? prevUser.likedBooks.filter((id) => id !== bookId)
-        : [...prevUser.likedBooks, bookId];
-      return { ...prevUser, likedBooks: updatedLikedBooks };
-    });
-    toast.success(
-      `Book ${currentUser.likedBooks.includes(bookId) ? "unliked" : "liked"}!`,
-    );
+  const handleDesiredBooksChange = async (bookId) => {
+    try {
+      const response = await axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/api/user/book/${bookId}`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          },
+        },
+      );
+
+      user.desiredBooks = response.data.data;
+
+      toast.success(response.data.message);
+    } catch (error) {
+      console.error("Error toggling desired book status:", error);
+      toast.error(
+        error.response?.data?.message ||
+          "Failed to update desired book status.",
+      );
+    }
   };
 
   const uniqueGenres = Array.from(
@@ -216,7 +161,6 @@ export default function BookExchange() {
 
   return (
     <div className="container mx-auto p-4 space-y-8">
-      <h1 className="text-3xl font-bold">Book Exchange</h1>
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0 md:space-x-4">
         <Input
           type="text"
@@ -268,10 +212,9 @@ export default function BookExchange() {
           <Label htmlFor="show-matches">Find My Matches</Label>
         </div>
       </div>
-      <h2 className="text-2xl font-semibold">Books Available for Exchange</h2>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {filteredBooks.map((book) => (
-          <Card key={book.id} className="flex flex-col justify-between">
+          <Card key={book._id} className="flex flex-col justify-between">
             <CardHeader className="p-4">
               <CardTitle className="text-lg">{book.title}</CardTitle>
             </CardHeader>
@@ -319,11 +262,11 @@ export default function BookExchange() {
                         </h3>
                         <ul className="list-disc pl-5">
                           {selectedOwner.desiredBooks.map((desiredBookId) => {
-                            const desiredBook = mockUsers
-                              .flatMap((u) => u.books)
-                              .find((b) => b.id === desiredBookId);
+                            const desiredBook = books.find(
+                              (b) => b._id === desiredBookId,
+                            );
                             return desiredBook ? (
-                              <li key={desiredBook.id}>{desiredBook.title}</li>
+                              <li key={desiredBook._id}>{desiredBook.title}</li>
                             ) : null;
                           })}
                         </ul>
@@ -340,10 +283,10 @@ export default function BookExchange() {
                             <SelectValue placeholder="Select a book" />
                           </SelectTrigger>
                           <SelectContent>
-                            {currentUser.books
-                              .filter((book) => book.offeredForExchange)
+                            {user.ownedBooks
+                              .filter((book) => book.isOffered)
                               .map((book) => (
-                                <SelectItem key={book.id} value={book.id}>
+                                <SelectItem key={book._id} value={book._id}>
                                   {book.title}
                                 </SelectItem>
                               ))}
@@ -360,9 +303,9 @@ export default function BookExchange() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => handleLikeBook(book.id)}
+                onClick={() => handleDesiredBooksChange(book._id)}
                 className={
-                  currentUser.likedBooks.includes(book.id)
+                  user?.desiredBooks.includes(book._id)
                     ? "text-red-500"
                     : "text-gray-500"
                 }

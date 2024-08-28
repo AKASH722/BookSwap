@@ -9,31 +9,32 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const accessToken = localStorage.getItem("accessToken");
-        if (!accessToken) throw "accessToken Not found";
-        const response = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/api/user`,
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
+  const fetchUserData = async () => {
+    try {
+      const accessToken = localStorage.getItem("accessToken");
+      if (!accessToken) throw "accessToken Not found";
+      const response = await axios.get(
+        `${import.meta.env.VITE_BACKEND_URL}/api/user`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
           },
-        );
-        setUser(response.data.data.user);
-        setIsAuthenticated(true);
-      } catch (error) {
-        setUser(null);
-        localStorage.removeItem("accessToken");
-        setIsAuthenticated(false);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+        },
+      );
+      setUser(response.data.data.user);
+      setIsAuthenticated(true);
+    } catch (error) {
+      setUser(null);
+      localStorage.removeItem("accessToken");
+      setIsAuthenticated(false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchUserData();
-  }, []);
+  }, [fetchUserData]);
 
   const login = async (email, password) => {
     try {
@@ -64,7 +65,9 @@ export const AuthProvider = ({ children }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout }}>
+    <AuthContext.Provider
+      value={{ isAuthenticated, user, login, logout, fetchUserData }}
+    >
       {children}
     </AuthContext.Provider>
   );
