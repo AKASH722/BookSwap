@@ -75,20 +75,6 @@ export const getSentRequests = async (req, res, next) => {
   }
 };
 
-export const fulfillRequest = async (req, res, next) => {
-  try {
-    const { requestId } = req.body;
-
-    const result = await exchangeRequestService.fulfillRequest(
-      requestId,
-      req.user
-    );
-    return res.status(result.code).json(result);
-  } catch (error) {
-    next(error);
-  }
-};
-
 export const createRequest = async (req, res, next) => {
   try {
     const { bookRequestedId, bookOfferedId } = req.body;

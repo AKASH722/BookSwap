@@ -20,29 +20,19 @@ export async function updateRequest(requestId, status, user) {
   exchangeRequest.status = status;
   await exchangeRequest.save();
 
+  if (status === "accepted") return await fulfillRequest(requestId, user);
+
   return Format.success("Request status updated successfully", exchangeRequest);
 }
 
-export async function fulfillRequest(requestId, user) {
+export async function fulfillRequest(requestId) {
   const exchangeRequest = await ExchangeRequest.findById(requestId);
-
-  if (!exchangeRequest) {
-    return Format.notFound("Exchange request not found");
-  }
-
-  if (exchangeRequest.requestee.toString() !== user._id.toString()) {
-    Format.unAuthorized("You are not authorized to fulfill this request");
-  }
-
-  if (exchangeRequest.status !== "accepted") {
-    Format.badRequest("Cannot fulfill a request that is not accepted");
-  }
 
   const bookRequested = await Book.findById(exchangeRequest.bookRequested);
   const bookOffered = await Book.findById(exchangeRequest.bookOffered);
 
   if (!bookRequested || !bookOffered) {
-    Format.notFound("Books involved in the exchange not found");
+    return Format.notFound("Books involved in the exchange not found");
   }
 
   const originalOwnerOfRequestedBook = bookRequested.ownedBy;
