@@ -12,6 +12,7 @@ import PrivateRoute from "@/components/PrivateRoute.jsx";
 import DesiredBooks from "@/components/DesiredBook.jsx";
 import BookListing from "@/components/BookListing.jsx";
 import BookExchange from "@/components/BookExchange.jsx";
+import ExchangeRequest from "@/components/ExchangeRequest.jsx";
 
 export default function App() {
   return (
@@ -37,6 +38,10 @@ export default function App() {
           <Route
             path="/exchange"
             element={<PrivateRoute element={<BookExchange />} />}
+          />
+          <Route
+            path="/exchange-request"
+            element={<PrivateRoute element={<ExchangeRequest />} />}
           />
         </Routes>
       </Router>

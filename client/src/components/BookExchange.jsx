@@ -112,12 +112,27 @@ export default function BookExchange() {
   const handleExchangeRequest = async () => {
     if (selectedBook && offerBook) {
       try {
-        // Replace with actual API request if needed
+        const response = await axios.post(
+          `${import.meta.env.VITE_BACKEND_URL}/api/exchange`,
+          {
+            bookRequestedId: selectedBook._id,
+            bookOfferedId: offerBook,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+            },
+          },
+        );
+
         toast.success(
-          `Exchange request sent for "${selectedBook.title}" offering "${user.books.find((b) => b._id === offerBook)?.title}"`,
+          response.data.message || "Exchange request sent successfully!",
         );
       } catch (error) {
-        toast.error("Failed to send exchange request");
+        console.error("Error sending exchange request:", error);
+        toast.error(
+          error.response?.data?.message || "Failed to send exchange request",
+        );
       } finally {
         setSelectedBook(null);
         setSelectedOwner(null);
@@ -237,7 +252,7 @@ export default function BookExchange() {
               )}
             </CardContent>
             <CardFooter className="p-4 pt-0 flex justify-between">
-              <Dialog>
+              <Dialog open={selectedBook && selectedOwner}>
                 <DialogTrigger asChild>
                   <Button onClick={() => handleBookSelect(book)}>
                     Request Exchange
@@ -293,7 +308,7 @@ export default function BookExchange() {
                           </SelectContent>
                         </Select>
                       </div>
-                      <Button onClick={handleExchangeRequest}>
+                      <Button type="submit" onClick={handleExchangeRequest}>
                         Send Exchange Request
                       </Button>
                     </div>

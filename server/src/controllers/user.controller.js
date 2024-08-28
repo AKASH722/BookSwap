@@ -1,7 +1,7 @@
 import Format from "../utils/Format.js";
 import * as userService from "../services/user.service.js";
 
-export let toggleDesiredBook = async (req, res, next) => {
+export const toggleDesiredBook = async (req, res, next) => {
   try {
     try {
       const user = req.user;

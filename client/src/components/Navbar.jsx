@@ -9,7 +9,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Book, BookHeart, BookOpen, LogOut, Menu, User } from "lucide-react";
+import {
+  Book,
+  BookCheck,
+  BookHeart,
+  BookOpen,
+  LogOut,
+  Menu,
+} from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext.jsx";
 
@@ -24,6 +31,7 @@ export default function Navbar() {
     { name: "Exchange", path: "/exchange", icon: BookOpen },
     { name: "My Books", path: "/my-books", icon: Book },
     { name: "Desired Books", path: "/desired-books", icon: BookHeart },
+    { name: "Exchange Requests", path: "/exchange-request", icon: BookCheck },
   ];
 
   return (

@@ -10,7 +10,7 @@ export let getAllDesiredBooks = async (req, res, next) => {
   }
 };
 
-export let getAllOfferedBooks = async (req, res, next) => {
+export const getAllOfferedBooks = async (req, res, next) => {
   try {
     const user = req.user;
     const result = await bookService.getAllOfferedBooks(user);
@@ -20,7 +20,7 @@ export let getAllOfferedBooks = async (req, res, next) => {
   }
 };
 
-export let deleteBook = async (req, res, next) => {
+export const deleteBook = async (req, res, next) => {
   try {
     const { id } = req.params;
     const user = req.user;
@@ -31,7 +31,7 @@ export let deleteBook = async (req, res, next) => {
   }
 };
 
-export let updateBook = async (req, res, next) => {
+export const updateBook = async (req, res, next) => {
   try {
     const { title, author, genre, isbn, description, imageUrl, isOffered } =
       req.body;

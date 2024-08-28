@@ -27,7 +27,7 @@ app.use(cookieParser());
 app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
 app.use("/api/book", bookRouter);
-app.use("/api/exchange-request", exchangeRequestRouter);
+app.use("/api/exchange", exchangeRequestRouter);
 
 app.use(errorMiddleware);
 
