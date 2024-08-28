@@ -9,21 +9,21 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Book, BookOpen, Home, LogOut, Menu, User } from "lucide-react";
+import { Book, BookHeart, BookOpen, LogOut, Menu, User } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext.jsx";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { pathname } = useLocation();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
 
   const isActive = (path) => pathname === path;
 
   const navItems = [
-    { name: "Home", path: "/", icon: Home },
-    { name: "My Books", path: "/my-books", icon: Book },
     { name: "Exchange", path: "/exchange", icon: BookOpen },
+    { name: "My Books", path: "/my-books", icon: Book },
+    { name: "Desired Books", path: "/desired-books", icon: BookHeart },
   ];
 
   return (
@@ -73,17 +73,15 @@ export default function Navbar() {
                 <DropdownMenuContent className="w-56" align="end" forceMount>
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">shadcn</p>
+                      <p className="text-sm font-medium leading-none">
+                        {user.username}
+                      </p>
                       <p className="text-xs leading-none text-muted-foreground">
-                        m@example.com
+                        {user.email}
                       </p>
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                    <User className="mr-2 h-4 w-4" />
-                    <span>Profile</span>
-                  </DropdownMenuItem>
                   <DropdownMenuItem onSelect={logout}>
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Log out</span>
@@ -131,17 +129,15 @@ export default function Navbar() {
                 </Avatar>
               </div>
               <div className="ml-3">
-                <div className="text-base font-medium leading-none">shadcn</div>
+                <div className="text-base font-medium leading-none">
+                  {user.username}
+                </div>
                 <div className="text-sm font-medium leading-none text-muted-foreground">
-                  m@example.com
+                  {user.email}
                 </div>
               </div>
             </div>
             <div className="mt-3 px-2 space-y-1">
-              <Button variant="ghost" className="w-full justify-start">
-                <User className="mr-2 h-4 w-4" />
-                Profile
-              </Button>
               <Button
                 variant="ghost"
                 className="w-full justify-start"

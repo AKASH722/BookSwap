@@ -1,5 +1,14 @@
 import Format from "../utils/Format.js";
 import { Book } from "../models/book.model.js";
+import { User } from "../models/user.model.js";
+
+export async function getAllDesiredBooks(user) {
+  const user_ = await User.findById(user._id).populate("desiredBooks");
+  const desiredBooks = user_.desiredBooks;
+  if (!desiredBooks) return Format.notFound("No Book are currently desired");
+
+  return Format.success("desired Books fetched", desiredBooks);
+}
 
 export async function getAllOfferedBooks(user) {
   const offeredBooks = await Book.find({

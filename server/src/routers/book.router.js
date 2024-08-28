@@ -16,4 +16,6 @@ router.delete("/:id", bookController.deleteBook);
 
 router.get("/all-offered", bookController.getAllOfferedBooks);
 
+router.get("/desired", bookController.getAllDesiredBooks);
+
 export default router;

@@ -1,5 +1,15 @@
 import * as bookService from "../services/book.service.js";
 
+export let getAllDesiredBooks = async (req, res, next) => {
+  try {
+    const user = req.user;
+    const result = await bookService.getAllDesiredBooks(user);
+    return res.status(result.code).json(result);
+  } catch (err) {
+    next(err);
+  }
+};
+
 export let getAllOfferedBooks = async (req, res, next) => {
   try {
     const user = req.user;
