@@ -1,22 +1,24 @@
-```markdown
 # BookSwap
 
 ## Overview
 BookSwap is a web application that allows users to exchange books with each other. The application consists of a client-side built with React and a server-side built with Express.js.
 
+## Deployed Application
+The application is deployed at: [Book Swap](https://book-swap-drab.vercel.app/)
+
 ## Client Environment Variables
 The client-side application uses the following environment variables:
 
 ```dotenv
-VITE_BACKEND_URL=http://localhost:8000
+VITE_BACKEND_URL=
 ```
 
 ## Server Environment Variables
 The server-side application uses the following environment variables:
 
 ```dotenv
-FRONTEND_URL=http://localhost:5173
-PORT=8000
+FRONTEND_URL=
+PORT=
 MONGODB_URI=
 ACCESS_TOKEN_SECRET=
 ACCESS_TOKEN_EXPIRY=
@@ -58,4 +60,3 @@ The server-side application is built using Express.js.
 
 ## License
 This project is licensed under the MIT License.
-```
