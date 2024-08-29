@@ -40,7 +40,6 @@ export default function BookExchange() {
   const [authorFilter, setAuthorFilter] = useState("");
   const [showOnlyMatches, setShowOnlyMatches] = useState(false);
   const [books, setBooks] = useState([]);
-  const [open, setOpen] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -108,7 +107,6 @@ export default function BookExchange() {
     setSelectedBook(book);
     const owner = book.ownedBy;
     setSelectedOwner(owner || null);
-    setOpen(true);
   };
 
   const handleExchangeRequest = async () => {
@@ -139,7 +137,6 @@ export default function BookExchange() {
         setSelectedBook(null);
         setSelectedOwner(null);
         setOfferBook("");
-        setOpen(false);
       }
     } else {
       toast.error("Please select a book to offer for exchange");
@@ -255,7 +252,7 @@ export default function BookExchange() {
               )}
             </CardContent>
             <CardFooter className="p-4 pt-0 flex justify-between">
-              <Dialog open={open} onOpenChange={setOpen}>
+              <Dialog open={selectedBook && selectedOwner}>
                 <DialogTrigger asChild>
                   <Button onClick={() => handleBookSelect(book)}>
                     Request Exchange
