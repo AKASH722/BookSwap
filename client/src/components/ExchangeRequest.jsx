@@ -12,12 +12,14 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "react-hot-toast";
+import { useAuth } from "@/contexts/AuthContext.jsx";
 
 export default function ExchangeRequest() {
   const [incomingRequests, setIncomingRequests] = useState([]);
   const [outgoingRequests, setOutgoingRequests] = useState([]);
   const [exchangeHistory, setExchangeHistory] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
   useEffect(() => {
     const fetchRequests = async () => {
       try {
@@ -50,15 +52,30 @@ export default function ExchangeRequest() {
         setOutgoingRequests(outgoingRes.data.data);
         const transformedHistory = historyRes.data.data.map((exchange) => ({
           id: exchange._id,
-          givenBook: {
-            title: exchange.bookRequested.title,
-            author: exchange.bookRequested.author,
-          },
-          receivedBook: {
-            title: exchange.bookOffered.title,
-            author: exchange.bookOffered.author,
-          },
-          exchangePartner: exchange.requestee.username, // Or use requestee.email if preferred
+          exchangePartner:
+            exchange.requester._id !== user._id
+              ? exchange.requester.username
+              : exchange.requestee.username,
+          givenBook:
+            exchange.requester._id === user._id
+              ? {
+                  title: exchange.bookOffered.title,
+                  author: exchange.bookOffered.author,
+                }
+              : {
+                  title: exchange.bookRequested.title,
+                  author: exchange.bookRequested.author,
+                },
+          receivedBook:
+            exchange.requester._id !== user._id
+              ? {
+                  title: exchange.bookOffered.title,
+                  author: exchange.bookOffered.author,
+                }
+              : {
+                  title: exchange.bookRequested.title,
+                  author: exchange.bookRequested.author,
+                },
           date: new Date(exchange.createdAt).toISOString().split("T")[0],
           status: exchange.status,
         }));

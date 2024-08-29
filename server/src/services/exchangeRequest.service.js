@@ -1,6 +1,7 @@
 import Format from "../utils/Format.js";
 import { ExchangeRequest } from "../models/exchangeRequest.model.js";
 import { Book } from "../models/book.model.js";
+import { User } from "../models/user.model.js";
 
 export async function updateRequest(requestId, status, user) {
   if (!["pending", "accepted", "rejected"].includes(status)) {
@@ -37,10 +38,22 @@ export async function fulfillRequest(requestId) {
 
   const originalOwnerOfRequestedBook = bookRequested.ownedBy;
   bookRequested.ownedBy = exchangeRequest.requester;
+  bookRequested.isOffered = false;
   bookOffered.ownedBy = originalOwnerOfRequestedBook;
+  bookOffered.isOffered = false;
 
   await bookRequested.save();
   await bookOffered.save();
+
+  await User.findByIdAndUpdate(exchangeRequest.requester, {
+    $addToSet: { ownedBooks: bookRequested._id },
+    $pull: { ownedBooks: bookOffered._id },
+  });
+
+  await User.findByIdAndUpdate(originalOwnerOfRequestedBook, {
+    $addToSet: { ownedBooks: bookOffered._id },
+    $pull: { ownedBooks: bookRequested._id },
+  });
 
   return Format.success("Books exchanged successfully and ownership updated", {
     bookRequested,
